@@ -69,6 +69,9 @@ module Precious
     end
 
     get '/data/*' do
+      response.headers["Cache-Control"] = "no-cache, no-store, max-age=0, must-revalidate"
+      response.headers["Pragma"] = "no-cache"
+      response.headers["Expires"] = "Fri, 01 Jan 1990 00:00:00 GMT" 
       @name = params[:splat].first
       wiki = Gollum::Wiki.new(settings.gollum_path, settings.wiki_options)
       if page = wiki.page(@name)
@@ -231,6 +234,23 @@ module Precious
       @results = Gollum::FileView.new(wiki.pages).render_files
       @ref = wiki.ref
       mustache :file_view
+    end
+
+    get '/livepreview/*' do
+      @name = params[:splat].first
+      wiki = Gollum::Wiki.new(settings.gollum_path, settings.wiki_options)
+      page = wiki.page(@name)
+      live_preview_url = '/livepreview/index.html?page=' + encodeURIComponent(@name)
+      if page
+        if wiki.live_preview && page.format.to_s.include?('markdown') && supported_useragent?(request.user_agent)
+          redirect live_preview_url
+        else
+          show_page_or_file(@name)
+        end
+      else
+        live_preview_url << '&create=true'
+        redirect live_preview_url
+      end
     end
 
     get '/*' do
