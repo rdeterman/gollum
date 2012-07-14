@@ -3,6 +3,49 @@ gollum -- A wiki built on top of Git
 
 [![Build Status](https://secure.travis-ci.org/github/gollum.png?branch=master)](http://travis-ci.org/github/gollum)
 
+## My Hacks
+Gollum rocks! And its works great as a personal wiki. 
+But the page flow of going into and out of edit mode is really annoying. 
+When I'm using a personal wiki, I pretty much always want to be in edit mode. 
+It got annoying to always have to click on the "edit" button to edit a page. 
+Plus, clicking on the edit screwed up my page history and made the back button awkward.
+
+I was finding this flow annoying:
+* I'm in page1
+* I click on link to page2
+* I click "edit" on page2
+* I click "save" on page2
+* I click back three times to get back to page1, including going back through the edit form which is yucky.
+
+So I made a couple of quick hacks to make this work better for me.
+
+Since I'm always writing markdown, I pretty much always want to be in the markdown preview mode. 
+When I click on the link in the preview mode, 
+I want to go to the page also in the preview mode 
+(even if this is a new page and needs to be created.... because I always want to create a markdown page).
+
+I don't really know rails, but I was able to hack this up a little bit. 
+In lib/gollum/frontend/app.rb I added a handler for /livepreview/ urls. 
+So if I click on a relative link while in preview mode (e.g. if I'm viewing /livepreview/index.html?page=page1), 
+and I click on a link to page2, then the http request is to /livepreview/page2 and it hits this handler. 
+I just redirect this request to /livepreview/index.html?page=page2, 
+and if this page doesn't exist I append the "&create=true" query string param. 
+Also in app.rb, I added the http headers to prevent rquests to /data/ from being cached.
+
+Inside livepreview.js, I added a "isDirty" flag that gets set if the page gets edited. 
+I don't want to get warned if I'm clicking on a preview link in a non-dirty page. 
+Also in livepreview.js, I don't reload the page after a save or create. 
+Ah, I probably need to handle error here but I'm not.
+
+The livepreview.js loaded like a billion js pages as AMD modules dependencies using require.js. 
+This was really slowing down loads of the livepreview page. 
+So I just ran r.js to optimize all of these dependencies into a livepreview-optimized.js file.
+
+Anyway, these hacks are just for me.
+I've only been using this for a few days, but so far so good.
+Many many thanks to the awesome work on gollum by the folks at github!
+
+
 ## DESCRIPTION
 
 Gollum is a simple wiki system built on top of Git that powers GitHub Wikis.
